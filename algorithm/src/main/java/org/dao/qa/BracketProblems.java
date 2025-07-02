@@ -1,6 +1,9 @@
 package main.java.org.dao.qa;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
 
 /**
  * 括号匹配问题综合解决方案 (支持JDK 1.8)
@@ -383,7 +386,10 @@ public class BracketProblems {
         System.out.println("]");
         
         // 验证结果：总和应为半开半闭
-        int sum = Arrays.stream(result).sum();
+        int sum = 0;
+        for (int value : result) {
+            sum += value;
+        }
         System.out.println("分配状态: " + (sum == 3 ? "✅" : "❌"));
     }
 }
