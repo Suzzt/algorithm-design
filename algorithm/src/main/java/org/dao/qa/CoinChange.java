@@ -3,59 +3,51 @@ package main.java.org.dao.qa;
 import java.util.*;
 
 /**
- * 零钱兑换问题
+ * 硬币找零问题（Coin Change Problem）
  * 
- * <p><b>问题描述</b>:
- * 给定不同面额的硬币coins和一个总金额amount，计算可以凑成总金额所需的最少硬币个数。
- * 如果没有任何一种硬币组合能组成总金额，返回-1。
+ * <p><b>问题描述：</b>
+ * 给定不同面额的硬币 coins 和一个总金额 amount。计算可以凑成总金额所需的最少的硬币个数。
+ * 如果没有任何一种硬币组合能组成总金额，返回 -1。硬币数量无限。
  * 
- * <p><b>示例</b>:
+ * <p><b>示例：</b>
  * 输入: coins = [1, 2, 5], amount = 11
- * 输出: 3 (因为 11 = 5 + 5 + 1)
+ * 输出: 3 
+ * 解释: 11 = 5 + 5 + 1
  * 
- * <p><b>问题难度</b>: 🔥🔥 中等 (LeetCode 第322题)
+ * <p><b>问题难度：</b>
+ * LeetCode 第322题（中等难度）
  * 
- * <p><b>解题思路</b>:
- * 1. 动态规划: 自底向上构建最少硬币数
- * 2. BFS(广度优先搜索): 找出最小兑换路径
- * 3. 贪心算法: 在特殊条件下有效（如可整除的硬币）
- * 4. 记忆化递归: 自顶向下的递归解法
+ * <p><b>解题思路：</b>
+ * 1. 基础动态规划解法（时间复杂度O(n * k)，空间复杂度O(n)）
+ * 2. 贪心+DFS回溯（适合小面额硬币）
+ * 3. BFS搜索最小硬币数
  * 
- * <p><b>时间复杂度</b>:
- *  动态规划: O(n×amount) - n为硬币种类数
- *  BFS: O(amount×k) - k为硬币组合数
- *  贪心: O(n log n) - 需要排序
- * 
- * <p><b>应用场景</b>:
+ * <p><b>应用场景：</b>
  * 1. 自动售货机找零系统
- * 2. 货币兑换服务
- * 3. 在线支付系统
- * 4. 资源分配优化
- * 5. 游戏道具兑换
+ * 2. 银行系统最小现金支付
+ * 3. 在线支付系统的零钱组合
+ * 4. 游戏中的资源兑换系统
  */
-
 public class CoinChange {
-
-    // ========================= 解法1: 动态规划 =========================
+    
+    // ========================= 解法1: 基础动态规划 =========================
     
     /**
      * 动态规划解法
      * 
-     * @param coins 可用硬币面额数组
+     * @param coins 硬币面值数组
      * @param amount 目标金额
-     * @return 最少硬币数，如无法兑换返回-1
+     * @return 最少硬币数，无法组合返回-1
      */
     public static int coinChangeDP(int[] coins, int amount) {
-        // 处理边界情况
-        if (amount < 0) return -1;
-        if (amount == 0) return 0;
+        // 边界情况处理
+        if (amount < 1) return 0;
+        if (coins == null || coins.length == 0) return -1;
         
-        // 初始化dp数组
-        int[] dp = new int[amount + 1];
-        Arrays.fill(dp, amount + 1); // 初始为极大值
-        dp[0] = 0; // 金额0不需要硬币
+        int[] dp = new int[amount + 1]; // dp[i]表示组成金额i所需的最小硬币数
+        Arrays.fill(dp, amount + 1);  // 初始化为一个不可能的值（大于目标值）
+        dp[0] = 0; // 金额0需要0个硬币
         
-        // 填充DP表
         for (int i = 1; i <= amount; i++) {
             for (int coin : coins) {
                 if (coin <= i) {
@@ -67,42 +59,43 @@ public class CoinChange {
         return dp[amount] > amount ? -1 : dp[amount];
     }
     
-    // ========================= 解法2: BFS方法 =========================
+    // ========================= 解法2: BFS搜索最小硬币数 =========================
     
     /**
-     * BFS解法 - 找出最小兑换路径
+     * BFS广度优先搜索解法（适合硬币面值分布合理时）
      * 
-     * @param coins 可用硬币面额数组
+     * @param coins 硬币面值数组
      * @param amount 目标金额
-     * @return 最少硬币数，如无法兑换返回-1
+     * @return 最少硬币数，无法组合返回-1
      */
     public static int coinChangeBFS(int[] coins, int amount) {
         if (amount == 0) return 0;
+        if (coins == null || coins.length == 0) return -1;
         
         Queue<Integer> queue = new LinkedList<>();
-        boolean[] visited = new boolean[amount + 1];
-        int steps = 0;
+        boolean[] visited = new boolean[amount + 1]; // 避免重复计算
+        int level = 0;
         
         queue.offer(0);
         visited[0] = true;
         
         while (!queue.isEmpty()) {
             int size = queue.size();
-            steps++;
+            level++;
             
             for (int i = 0; i < size; i++) {
-                int current = queue.poll();
+                int sum = queue.poll();
                 
                 for (int coin : coins) {
-                    int next = current + coin;
+                    int newSum = sum + coin;
                     
-                    if (next == amount) {
-                        return steps;
+                    if (newSum == amount) {
+                        return level;
                     }
                     
-                    if (next < amount && !visited[next]) {
-                        visited[next] = true;
-                        queue.offer(next);
+                    if (newSum < amount && !visited[newSum]) {
+                        visited[newSum] = true;
+                        queue.offer(newSum);
                     }
                 }
             }
@@ -111,499 +104,284 @@ public class CoinChange {
         return -1;
     }
     
-    // ========================= 解法3: 贪心算法 =========================
+    // ========================= 解法3: 回溯+剪枝（贪心） =========================
     
     /**
-     * 贪心解法 - 适用于硬币面额可整除的情况
+     * 回溯法（贪心思想）找所有组合
      * 
-     * @param coins 可用硬币面额数组
+     * @param coins 硬币面值数组
      * @param amount 目标金额
-     * @return 最少硬币数，如无法兑换返回-1
+     * @return 所有可能的硬币组合（最少组合在前）
      */
-    public static int coinChangeGreedy(int[] coins, int amount) {
-        // 排序硬币面额（降序）
+    public static List<List<Integer>> findAllCombinations(int[] coins, int amount) {
+        List<List<Integer>> result = new ArrayList<>();
+        Arrays.sort(coins); // 排序以便剪枝
+        backtrack(coins, amount, coins.length - 1, new ArrayList<>(), result);
+        return result;
+    }
+    
+    private static void backtrack(int[] coins, int amount, int idx, 
+                                List<Integer> current, List<List<Integer>> result) {
+        if (amount == 0) {
+            result.add(new ArrayList<>(current));
+            return;
+        }
+        
+        for (int i = idx; i >= 0; i--) {
+            if (coins[i] <= amount && (current.isEmpty() || coins[i] <= current.get(current.size()-1))) {
+                current.add(coins[i]);
+                backtrack(coins, amount - coins[i], i, current, result);
+                current.remove(current.size() - 1);
+            }
+        }
+    }
+    
+    /**
+     * 贪心+DFS找最小组合（假设硬币无限且面值有公因子）
+     * 
+     * @param coins 硬币面值数组
+     * @param amount 目标金额
+     * @return 最小硬币数，无法组合返回-1
+     */
+    public static int coinChangeGreedyDFS(int[] coins, int amount) {
+        Arrays.sort(coins); // 从小到大排序
+        // 从大到小排列硬币面值
         int[] sortedCoins = Arrays.copyOf(coins, coins.length);
-        Arrays.sort(sortedCoins);
+        for (int i = 0; i < coins.length / 2; i++) {
+            int temp = sortedCoins[i];
+            sortedCoins[i] = sortedCoins[coins.length - 1 - i];
+            sortedCoins[coins.length - 1 - i] = temp;
+        }
         
-        // 贪心计算
-        int count = 0;
-        int remaining = amount;
+        int[] min = {Integer.MAX_VALUE};
+        dfs(sortedCoins, amount, 0, 0, min);
+        return min[0] == Integer.MAX_VALUE ? -1 : min[0];
+    }
+    
+    private static void dfs(int[] coins, int amount, int count, int idx, int[] min) {
+        if (amount == 0) {
+            min[0] = Math.min(min[0], count);
+            return;
+        }
         
-        for (int i = sortedCoins.length - 1; i >= 0; i--) {
-            int coin = sortedCoins[i];
-            if (coin <= remaining) {
-                int numCoins = remaining / coin;
-                count += numCoins;
-                remaining %= coin;
-                
-                if (remaining == 0) {
-                    return count;
-                }
+        if (idx == coins.length) return;
+        
+        // 剪枝：如果当前硬币面值太大直接跳过
+        // 剪枝：如果当前硬币数已经超过最小值，提前结束
+        if (count + (amount + coins[idx] - 1) / coins[idx] >= min[0]) {
+            return;
+        }
+        
+        // 尝试使用当前面值的最大可能次数（从多到少）
+        int maxK = amount / coins[idx];
+        for (int k = maxK; k >= 0; k--) {
+            if (count + k < min[0]) {
+                dfs(coins, amount - k * coins[idx], count + k, idx + 1, min);
+            } else {
+                break;
             }
         }
-        
-        return -1;
     }
     
-    // ========================= 解法4: 记忆化递归 =========================
-    
-    /**
-     * 记忆化递归解法
-     * 
-     * @param coins 可用硬币面额数组
-     * @param amount 目标金额
-     * @return 最少硬币数，如无法兑换返回-1
-     */
-    public static int coinChangeMemo(int[] coins, int amount) {
-        int[] memo = new int[amount + 1];
-        Arrays.fill(memo, -2); // -2表示未计算
-        return dfs(coins, amount, memo);
-    }
-    
-    private static int dfs(int[] coins, int amount, int[] memo) {
-        // 边界条件
-        if (amount < 0) return -1;
-        if (amount == 0) return 0;
-        
-        // 检查记忆
-        if (memo[amount] != -2) {
-            return memo[amount];
-        }
-        
-        int min = Integer.MAX_VALUE;
-        
-        // 尝试所有硬币
-        for (int coin : coins) {
-            int res = dfs(coins, amount - coin, memo);
-            if (res >= 0 && res < min) {
-                min = res + 1;
-            }
-        }
-        
-        // 保存结果
-        memo[amount] = (min == Integer.MAX_VALUE) ? -1 : min;
-        return memo[amount];
-    }
-    
-    // ========================= 可视化工具 =========================
-    
-    /**
-     * 可视化动态规划表
-     * 
-     * @param coins 可用硬币面额数组
-     * @param amount 目标金额
-     */
-    public static void visualizeDP(int[] coins, int amount) {
-        System.out.println("\n动态规划表可视化:");
-        System.out.println("硬币: " + Arrays.toString(coins));
-        System.out.println("目标金额: " + amount);
-        
-        int[] dp = new int[amount + 1];
-        Arrays.fill(dp, amount + 1);
-        dp[0] = 0;
-        
-        // 打印表头
-        System.out.print("金额 ");
-        for (int i = 0; i <= amount; i++) {
-            System.out.printf("%4d", i);
-        }
-        System.out.println();
-        
-        // 填充并打印表格
-        for (int i = 1; i <= amount; i++) {
-            for (int coin : coins) {
-                if (coin <= i) {
-                    dp[i] = Math.min(dp[i], dp[i - coin] + 1);
-                }
-            }
-            
-            System.out.printf("%4d: ", i);
-            for (int j = 0; j <= i; j++) {
-                if (dp[j] == amount + 1) {
-                    System.out.print("  ∞ ");
-                } else {
-                    System.out.printf("%4d", dp[j]);
-                }
-            }
-            System.out.println();
-        }
-        
-        System.out.println("最少硬币数: " + 
-                          (dp[amount] > amount ? -1 : dp[amount]));
-    }
-    
-    /**
-     * 可视化BFS路径
-     * 
-     * @param coins 可用硬币面额数组
-     * @param amount 目标金额
-     */
-    public static void visualizeBFS(int[] coins, int amount) {
-        System.out.println("\nBFS遍历过程可视化:");
-        System.out.println("起点: 0");
-        
-        Queue<Integer> queue = new LinkedList<>();
-        boolean[] visited = new boolean[amount + 1];
-        int steps = 0;
-        Map<Integer, Integer> parentMap = new HashMap<>();
-        
-        queue.offer(0);
-        visited[0] = true;
-        parentMap.put(0, null);
-        
-        while (!queue.isEmpty()) {
-            int size = queue.size();
-            steps++;
-            System.out.printf("步骤 %d: %n", steps);
-            
-            for (int i = 0; i < size; i++) {
-                int current = queue.poll();
-                
-                for (int coin : coins) {
-                    int next = current + coin;
-                    
-                    // 打印当前尝试
-                    System.out.printf("  尝试: %d + %d = %d", current, coin, next);
-                    
-                    if (next == amount) {
-                        System.out.println(" √ 找到方案!");
-                        System.out.println("\n兑换路径:");
-                        printPath(parentMap, next);
-                        return;
-                    }
-                    
-                    if (next < amount && !visited[next]) {
-                        System.out.println(" → 加入队列");
-                        visited[next] = true;
-                        queue.offer(next);
-                        parentMap.put(next, current);
-                    } else {
-                        System.out.println();
-                    }
-                }
-            }
-        }
-        
-        System.out.println("\n无法兑换目标金额");
-    }
-    
-    // 打印兑换路径
-    private static void printPath(Map<Integer, Integer> parentMap, int amount) {
-        List<Integer> path = new ArrayList<>();
-        Integer current = amount;
-        
-        while (current != null) {
-            path.add(current);
-            current = parentMap.get(current);
-        }
-        
-        Collections.reverse(path);
-        
-        System.out.print("路径: ");
-        for (int i = 1; i < path.size(); i++) {
-            System.out.printf("%d → ", path.get(i) - path.get(i - 1));
-        }
-        System.out.println("\b\b= " + amount);
-    }
-    
-    // ========================= 应用场景 =========================
+    // ========================= 应用场景部分 =========================
     
     /**
      * 自动售货机找零系统
      * 
-     * @param coins 系统支持的硬币面额
-     * @param amount 需要找回的金额
-     * @param customerCoins 顾客投入的硬币
-     * @return 需要退还给顾客的硬币组合
+     * @param amount 需找零金额
+     * @param availableCoins 机器当前可用硬币（面值:数量）
+     * @return 找零方案（硬币组合），无法找零返回空列表
      */
-    public static List<Integer> vendingMachineChange(
-        int[] coins, int amount, List<Integer> customerCoins) {
+    public static List<String> vendingMachineChange(int amount, Map<Integer, Integer> availableCoins) {
+        List<String> results = new ArrayList<>();
+        List<Integer> coinList = new ArrayList<>();
+        Map<Integer, Integer> coinCount = new HashMap<>();
         
-        // 计算顾客已付款
-        int paid = customerCoins.stream().mapToInt(Integer::intValue).sum();
-        int changeNeeded = paid - amount;
-        
-        // 验证付款
-        if (changeNeeded < 0) {
-            throw new IllegalArgumentException("付款不足");
+        // 生成可用硬币列表（考虑数量）
+        for (Map.Entry<Integer, Integer> entry : availableCoins.entrySet()) {
+            int coin = entry.getKey();
+            int count = entry.getValue();
+            for (int i = 0; i < count; i++) {
+                coinList.add(coin);
+                coinCount.put(coin, coinCount.getOrDefault(coin, 0) + 1);
+            }
         }
-        if (changeNeeded == 0) {
+        
+        // 转换为数组
+        int[] coins = coinList.stream().mapToInt(i -> i).toArray();
+        int minCoins = coinChangeDP(coins, amount);
+        if (minCoins != -1) {
+            // 查找所有组合
+            List<List<Integer>> combinations = findAllCombinations(coins, amount);
+            for (List<Integer> combo : combinations) {
+                if (combo.size() == minCoins && isValidCombination(combo, coinCount)) {
+                    results.add(formatCombination(combo));
+                }
+            }
+        }
+        
+        return results;
+    }
+    
+    // 辅助方法：检查组合是否在可用硬币数量范围内
+    private static boolean isValidCombination(List<Integer> combo, Map<Integer, Integer> coinCount) {
+        Map<Integer, Integer> used = new HashMap<>();
+        for (int coin : combo) {
+            used.put(coin, used.getOrDefault(coin, 0) + 1);
+            if (used.get(coin) > coinCount.getOrDefault(coin, 0)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // 格式化组合输出
+    private static String formatCombination(List<Integer> combo) {
+        Collections.sort(combo);
+        Collections.reverse(combo);
+        StringBuilder sb = new StringBuilder();
+        for (int coin : combo) {
+            sb.append(coin).append("+");
+        }
+        sb.deleteCharAt(sb.length() - 1);
+        return sb.toString();
+    }
+    
+    /**
+     * 游戏资源兑换系统
+     * 
+     * @param resources 拥有的资源值 [value]
+     * @param targetValue 需要兑换的资源值
+     * @return 最少资源使用方案
+     */
+    public static List<Integer> gameResourceExchange(int[] resources, int targetValue) {
+        // 资源兑换相当于硬币找零
+        int minCount = coinChangeDP(resources, targetValue);
+        List<List<Integer>> allCombos = findAllCombinations(resources, targetValue);
+        
+        if (allCombos.isEmpty()) {
             return Collections.emptyList();
         }
         
-        // 计算找零组合
-        return findMinChange(coins, changeNeeded);
-    }
-    
-    // 寻找最少硬币的找零组合
-    private static List<Integer> findMinChange(int[] coins, int amount) {
-        // 边界情况
-        if (amount == 0) return Collections.emptyList();
-        
-        // 初始化DP表和选择表
-        int[] dp = new int[amount + 1];
-        int[] choices = new int[amount + 1]; // 记录最后使用的硬币
-        Arrays.fill(dp, amount + 1);
-        dp[0] = 0;
-        
-        // 填充DP表
-        for (int i = 1; i <= amount; i++) {
-            for (int coin : coins) {
-                if (coin <= i && dp[i - coin] + 1 < dp[i]) {
-                    dp[i] = dp[i - coin] + 1;
-                    choices[i] = coin;
-                }
+        // 找最小数量的组合
+        for (List<Integer> combo : allCombos) {
+            if (combo.size() == minCount) {
+                return combo;
             }
         }
         
-        // 回溯找零组合
-        if (dp[amount] > amount) return null;
-        
-        List<Integer> change = new ArrayList<>();
-        int remaining = amount;
-        while (remaining > 0) {
-            int coin = choices[remaining];
-            change.add(coin);
-            remaining -= coin;
-        }
-        
-        return change;
+        return allCombos.get(0);
     }
     
     /**
-     * 货币兑换服务
+     * 银行系统最小现金支付方案
      * 
-     * @param fromCurrency 源币种
-     * @param toCurrency 目标币种
-     * @param amount 兑换金额
-     * @param exchangeRate 汇率表
-     * @return 兑换后的金额和过程
+     * @param amount 支付金额
+     * @param denominations 可用面额（考虑面值优先级）
+     * @return 最少张数组合
      */
-    public static String currencyExchange(
-        String fromCurrency, String toCurrency, int amount, 
-        Map<String, Map<String, Double>> exchangeRate) {
+    public static Map<Integer, Integer> bankPayment(int amount, int[] denominations) {
+        Arrays.sort(denominations); // 从小排序到大
         
-        // 创建币种数组
-        List<String> currencies = new ArrayList<>(exchangeRate.keySet());
-        int n = currencies.size();
-        
-        // 创建硬币系统模拟兑换比例
-        int[] coins = new int[n];
-        for (int i = 0; i < n; i++) {
-            coins[i] = i + 1;
+        // 动态规划找最小张数
+        int minCoins = coinChangeDP(denominations, amount);
+        if (minCoins == -1) {
+            return Collections.emptyMap();
         }
         
-        // 将问题映射为硬币找零问题
-        int target = n; // 目标位置设为n
+        // 找出所有最小组合
+        List<List<Integer>> allCombos = findAllCombinations(denominations, amount);
         
-        // 计算路径
-        List<Integer> path = findMinChange(coins, target);
+        // 找到面值最优的组合（优先使用大面值）
+        List<Integer> bestCombo = null;
+        int maxFaceValue = -1;
         
-        // 构建兑换路径
-        StringBuilder pathStr = new StringBuilder();
-        int current = 0;
-        for (int coin : path) {
-            String nextCur = currencies.get(current + coin - 1);
-            pathStr.append(currencies.get(current)).append(" → ").append(nextCur).append(" ");
-            current += coin;
-        }
-        
-        return String.format(
-            "兑换路径: %s= %s 金额: %.2f %s", 
-            pathStr, toCurrency, amount * 0.95, toCurrency);
-    }
-    
-    /**
-     * 资源分配优化
-     * 
-     * @param resources 可用资源数量数组
-     * @param requirements 任务需求数组
-     * @return 最少的任务分配次数
-     */
-    public static int resourceAllocation(int[] resources, int[] requirements) {
-        // 将问题转化为硬币问题：资源是硬币，需求是金额
-        int maxRequirement = Arrays.stream(requirements).max().getAsInt();
-        int total = Arrays.stream(resources).sum();
-        
-        // 使用DP计算每个需求的最小分配
-        int[] dp = new int[maxRequirement + 1];
-        Arrays.fill(dp, resources.length + 1);
-        dp[0] = 0;
-        
-        for (int i = 1; i <= maxRequirement; i++) {
-            for (int res : resources) {
-                if (res <= i) {
-                    dp[i] = Math.min(dp[i], dp[i - res] + 1);
+        for (List<Integer> combo : allCombos) {
+            if (combo.size() == minCoins) {
+                int faceValue = combo.stream().max(Integer::compareTo).get();
+                if (faceValue > maxFaceValue) {
+                    maxFaceValue = faceValue;
+                    bestCombo = combo;
                 }
             }
         }
         
-        // 计算总分配次数
-        int totalAssignments = 0;
-        for (int req : requirements) {
-            if (req > 0) {
-                if (dp[req] > resources.length) {
-                    return -1; // 无法满足
-                }
-                totalAssignments += dp[req];
-            }
+        // 统计面值数量
+        Map<Integer, Integer> result = new TreeMap<>(Collections.reverseOrder());
+        for (int coin : bestCombo) {
+            result.put(coin, result.getOrDefault(coin, 0) + 1);
         }
         
-        return totalAssignments;
+        return result;
     }
     
-    // ========================= 测试用例 =========================
+    // ========================= 测试方法 =========================
     
     public static void main(String[] args) {
-        testBasicCases();
-        testComplexCases();
-        testPerformance();
+        testAlgorithms();
         testApplicationScenarios();
     }
     
-    private static void testBasicCases() {
-        System.out.println("====== 基础测试 ======");
-        int[] coins1 = {1, 2, 5};
-        int amount1 = 11;
-        testSolution(coins1, amount1, 3);
+    private static void testAlgorithms() {
+        System.out.println("====== 算法基本测试 ======");
+        int[] coins = {1, 2, 5};
+        int amount = 11;
         
-        int[] coins2 = {2};
-        int amount2 = 3;
-        testSolution(coins2, amount2, -1);
+        System.out.println("测试用例: 硬币 = " + Arrays.toString(coins) + ", 金额 = " + amount);
+        System.out.println("动态规划结果: " + coinChangeDP(coins, amount));
+        System.out.println("BFS结果: " + coinChangeBFS(coins, amount));
+        System.out.println("贪心+DFS结果: " + coinChangeGreedyDFS(coins, amount));
         
-        int[] coins3 = {1};
-        int amount3 = 0;
-        testSolution(coins3, amount3, 0);
-    }
-    
-    private static void testSolution(int[] coins, int amount, int expected) {
-        System.out.printf("\n测试: coins=%s, amount=%d%n", 
-                         Arrays.toString(coins), amount);
-        
-        int dp = coinChangeDP(coins, amount);
-        int bfs = coinChangeBFS(coins, amount);
-        int greedy = coinChangeGreedy(coins, amount);
-        int memo = coinChangeMemo(coins, amount);
-        
-        System.out.println("动态规划: " + dp);
-        System.out.println("BFS:     " + bfs);
-        System.out.println("贪心算法: " + greedy);
-        System.out.println("记忆化递归: " + memo);
-        
-        boolean pass = dp == expected && bfs == expected && 
-                     memo == expected;
-        
-        System.out.println("结果: " + (pass ? "✅" : "❌"));
-        
-        // 可视化小规模问题
-        if (amount <= 20) {
-            visualizeDP(coins, amount);
-            visualizeBFS(coins, amount);
+        System.out.println("\n所有组合:");
+        List<List<Integer>> combinations = findAllCombinations(coins, amount);
+        for (int i = 0; i < Math.min(5, combinations.size()); i++) {
+            System.out.println("  组合" + (i+1) + ": " + combinations.get(i));
         }
-    }
-    
-    private static void testComplexCases() {
-        System.out.println("\n====== 复杂测试 ======");
         
-        // 美国硬币系统测试
-        int[] usCoins = {1, 5, 10, 25};
-        System.out.println("美国硬币系统 [1,5,10,25]");
-        testSolution(usCoins, 41, 4);
-        
-        // 欧洲硬币系统测试
-        int[] euCoins = {1, 2, 5, 10, 20, 50};
-        testSolution(euCoins, 65, 3);
-        
-        // 无法凑成的金额
-        int[] coins = {3, 7};
-        testSolution(coins, 11, 3);
-        testSolution(coins, 5, -1);
-    }
-    
-    private static void testPerformance() {
-        System.out.println("\n====== 性能测试 ======");
-        int[] coins = {1, 2, 5, 10, 20, 50};
-        int amount = 1000;
-        
-        long start, end;
-        
-        start = System.currentTimeMillis();
-        coinChangeDP(coins, amount);
-        end = System.currentTimeMillis();
-        System.out.printf("动态规划用时: %d ms%n", end - start);
-        
-        start = System.currentTimeMillis();
-        coinChangeBFS(coins, amount);
-        end = System.currentTimeMillis();
-        System.out.printf("BFS用时:     %d ms%n", end - start);
-        
-        start = System.currentTimeMillis();
-        coinChangeMemo(coins, amount);
-        end = System.currentTimeMillis();
-        System.out.printf("记忆化递归用时: %d ms%n", end - start);
-        
-        start = System.currentTimeMillis();
-        coinChangeGreedy(coins, amount);
-        end = System.currentTimeMillis();
-        System.out.printf("贪心算法用时: %d ms%n", end - start);
+        // 大金额测试
+        int[] coins2 = {1, 5, 10, 25, 50};
+        int amount2 = 87;
+        System.out.println("\n大金额测试: 硬币 = " + Arrays.toString(coins2) + ", 金额 = " + amount2);
+        System.out.println("动态规划结果: " + coinChangeDP(coins2, amount2));
     }
     
     private static void testApplicationScenarios() {
         System.out.println("\n====== 应用场景测试 ======");
         
-        // 测试1: 自动售货机找零系统
-        System.out.println("1. 自动售货机找零系统:");
-        int[] vendingCoins = {1, 5, 10, 25}; // 美分
-        int itemPrice = 75; // 商品价格75美分
-        List<Integer> customerPayment = Arrays.asList(25, 25, 25, 25); // 顾客支付1美元
+        // 场景1: 自动售货机找零系统
+        System.out.println("1. 自动售货机找零系统测试:");
+        Map<Integer, Integer> availableCoins = new HashMap<>();
+        availableCoins.put(10, 5); // 5个10元硬币
+        availableCoins.put(5, 10); // 10个5元硬币
+        availableCoins.put(1, 20); // 20个1元硬币
+        int changeAmount = 48;
         
-        List<Integer> change = vendingMachineChange(
-            vendingCoins, itemPrice, customerPayment);
-        System.out.println("商品价格: " + itemPrice + "美分");
-        System.out.println("顾客支付: " + customerPayment + "美分");
-        System.out.println("找零硬币: " + change + "美分");
+        System.out.println("找零金额: " + changeAmount);
+        System.out.println("可用硬币: " + availableCoins);
         
-        // 测试2: 货币兑换服务
-        System.out.println("\n2. 货币兑换服务:");
-        Map<String, Map<String, Double>> exchangeRate = getStringMapMap();
-
-        String result = currencyExchange("USD", "GBP", 100, exchangeRate);
-        System.out.println(result);
+        List<String> changeOptions = vendingMachineChange(changeAmount, availableCoins);
+        System.out.println("可能的找零方案:");
+        for (int i = 0; i < Math.min(3, changeOptions.size()); i++) {
+            System.out.println("  " + (i+1) + ") " + changeOptions.get(i));
+        }
         
-        // 测试3: 资源分配优化
-        System.out.println("\n3. 资源分配优化:");
-        int[] resources = {1, 3, 5}; // 可用资源单位
-        int[] requirements = {7, 4, 9}; // 任务需求
-        int assignments = resourceAllocation(resources, requirements);
-        System.out.println("资源: " + Arrays.toString(resources));
-        System.out.println("任务需求: " + Arrays.toString(requirements));
-        System.out.println("最少分配次数: " + assignments);
-    }
-
-    private static Map<String, Map<String, Double>> getStringMapMap() {
-        Map<String, Map<String, Double>> exchangeRate = new HashMap<>();
-
-        // USD 汇率
-        Map<String, Double> usdMap = new HashMap<>();
-        usdMap.put("EUR", 0.85);
-        usdMap.put("JPY", 110.0);
-        exchangeRate.put("USD", usdMap);
-
-        // EUR 汇率
-        Map<String, Double> eurMap = new HashMap<>();
-        eurMap.put("JPY", 129.0);
-        eurMap.put("GBP", 0.9);
-        exchangeRate.put("EUR", eurMap);
-
-        // JPY 汇率
-        Map<String, Double> jpyMap = new HashMap<>();
-        jpyMap.put("GBP", 0.0067);
-        exchangeRate.put("JPY", jpyMap);
-
-        // GBP 汇率
-        Map<String, Double> gbpMap = new HashMap<>();
-        gbpMap.put("USD", 1.38);
-        exchangeRate.put("GBP", gbpMap);
-        return exchangeRate;
+        // 场景2: 游戏资源兑换系统
+        System.out.println("\n2. 游戏资源兑换系统测试:");
+        int[] resources = {5, 10, 20, 50};
+        int targetValue = 80;
+        List<Integer> resourceCombo = gameResourceExchange(resources, targetValue);
+        System.out.println("目标资源值: " + targetValue);
+        System.out.println("资源组合: " + resourceCombo);
+        
+        // 场景3: 银行系统最小现金支付
+        System.out.println("\n3. 银行支付系统测试:");
+        int[] bankDenominations = {1, 5, 10, 20, 50, 100};
+        int paymentAmount = 378;
+        Map<Integer, Integer> paymentPlan = bankPayment(paymentAmount, bankDenominations);
+        System.out.println("支付金额: " + paymentAmount);
+        System.out.println("最小张数支付方案:");
+        for (Map.Entry<Integer, Integer> entry : paymentPlan.entrySet()) {
+            System.out.println("  " + entry.getKey() + "元 x " + entry.getValue() + " 张");
+        }
     }
 }
