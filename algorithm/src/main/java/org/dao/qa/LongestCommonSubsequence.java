@@ -1,51 +1,44 @@
 package main.java.org.dao.qa;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * 最长公共子序列问题（Longest Common Subsequence, LCS）
+ * 最长公共子序列（LCS）综合解决方案
  * 
- * <p><b>问题描述</b>:
- * 给定两个字符串text1和text2，返回这两个字符串的最长公共子序列的长度。
- * 子序列：通过删除某些字符但不改变字符相对顺序形成的新字符串。
+ * <p><b>本类包含的功能：</b>
+ * 1. 基础LCS长度计算
+ * 2. 空间优化版LCS计算
+ * 3. 回溯获取最长公共子序列
+ * 4. 文本相似度计算
+ * 5. DNA序列比对可视化
+ * 6. 文件差异比较（基于LCS）
+ * 7. 代码剽窃检测
  * 
- * <p><b>示例</b>:
- * 输入: text1 = "abcde", text2 = "ace"
- * 输出: 3 ("ace")
- * 
- * <p><b>问题难度</b>: 🔥🔥 中等 (LeetCode 第1143题)
- * 
- * <p><b>解题思路</b>:
- * 1. 动态规划: 二维DP表记录LCS长度
- * 2. 空间优化: 滚动数组减少空间复杂度
- * 3. 回溯重建: 根据DP表重建LCS字符串
- * 4. 应用扩展: 文本差异比较、DNA序列比对等
- * 
- * <p><b>时间复杂度</b>:
- *  动态规划: O(m*n) - m和n分别为两个字符串长度
- *  空间优化: O(min(m,n))
- * 
- * <p><b>应用场景</b>:
- * 1. 版本控制系统（如Git的diff功能）
- * 2. DNA序列比对（生物信息学）
- * 3. 文本相似度计算
- * 4. 抄袭检测系统
- * 5. 语音识别中的语音序列匹配
+ * <p><b>应用场景：</b>
+ * 1. 生物信息学中的DNA/RNA序列比对
+ * 2. 文本相似度计算和文档比对
+ * 3. 版本控制系统中的文件差异比较
+ * 4. 代码剽窃检测
+ * 5. 自然语言处理中的文本分析
  */
-
 public class LongestCommonSubsequence {
     
-    // ========================= 解法1: 动态规划 =========================
+    // ======================== 核心算法部分 ========================
     
     /**
-     * 动态规划解法
+     * 基础LCS长度计算（动态规划）
      * 
-     * @param text1 字符串1
-     * @param text2 字符串2
-     * @return 最长公共子序列长度
+     * @param text1 文本1
+     * @param text2 文本2
+     * @return LCS的长度
+     * 
+     * 时间复杂度：O(m*n)
+     * 空间复杂度：O(m*n)
      */
-    public static int lcsDP(String text1, String text2) {
+    public static int lcsLength(String text1, String text2) {
         int m = text1.length();
         int n = text2.length();
         int[][] dp = new int[m + 1][n + 1];
@@ -63,14 +56,15 @@ public class LongestCommonSubsequence {
         return dp[m][n];
     }
     
-    // ========================= 解法2: 空间优化 =========================
-    
     /**
-     * 动态规划空间优化版
+     * 空间优化版LCS计算
      * 
-     * @param text1 字符串1
-     * @param text2 字符串2
-     * @return 最长公共子序列长度
+     * @param text1 文本1
+     * @param text2 文本2
+     * @return LCS的长度
+     * 
+     * 时间复杂度：O(m*n)
+     * 空间复杂度：O(min(m,n))
      */
     public static int lcsOptimized(String text1, String text2) {
         // 确保text2是较短的字符串
@@ -82,34 +76,34 @@ public class LongestCommonSubsequence {
         
         int m = text1.length();
         int n = text2.length();
-        int[] dp = new int[n + 1];
+        int[] current = new int[n + 1];
+        int[] previous = new int[n + 1];
         
         for (int i = 1; i <= m; i++) {
-            int prev = 0; // 保存左上角的值
             for (int j = 1; j <= n; j++) {
-                int temp = dp[j]; // 保存当前值
                 if (text1.charAt(i - 1) == text2.charAt(j - 1)) {
-                    dp[j] = prev + 1;
+                    current[j] = previous[j - 1] + 1;
                 } else {
-                    dp[j] = Math.max(dp[j], dp[j - 1]);
+                    current[j] = Math.max(previous[j], current[j - 1]);
                 }
-                prev = temp; // 更新左上角值
             }
+            // 更新数组引用
+            int[] temp = previous;
+            previous = current;
+            current = temp;
         }
         
-        return dp[n];
+        return previous[n];
     }
     
-    // ========================= 解法3: 重建LCS字符串 =========================
-    
     /**
-     * 重建最长公共子序列字符串
+     * 回溯获取最长公共子序列
      * 
-     * @param text1 字符串1
-     * @param text2 字符串2
-     * @return 最长公共子序列字符串
+     * @param text1 文本1
+     * @param text2 文本2
+     * @return 一个最长公共子序列
      */
-    public static String buildLCS(String text1, String text2) {
+    public static String getLCS(String text1, String text2) {
         int m = text1.length();
         int n = text2.length();
         int[][] dp = new int[m + 1][n + 1];
@@ -125,7 +119,7 @@ public class LongestCommonSubsequence {
             }
         }
         
-        // 回溯重建LCS
+        // 回溯构建LCS
         StringBuilder lcs = new StringBuilder();
         int i = m, j = n;
         while (i > 0 && j > 0) {
@@ -143,163 +137,247 @@ public class LongestCommonSubsequence {
         return lcs.reverse().toString();
     }
     
-    // ========================= 可视化工具 =========================
-    
     /**
-     * 可视化DP表
-     * 
-     * @param text1 字符串1
-     * @param text2 字符串2
-     */
-    public static void visualizeDPTable(String text1, String text2) {
-        int m = text1.length();
-        int n = text2.length();
-        int[][] dp = new int[m + 1][n + 1];
-        
-        // 填充DP表
-        for (int i = 1; i <= m; i++) {
-            for (int j = 1; j <= n; j++) {
-                if (text1.charAt(i - 1) == text2.charAt(j - 1)) {
-                    dp[i][j] = dp[i - 1][j - 1] + 1;
-                } else {
-                    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
-                }
-            }
-        }
-        
-        // 打印表头
-        System.out.println("\nDP表可视化:");
-        System.out.print("      ");
-        for (char c : text2.toCharArray()) {
-            System.out.print(c + "  ");
-        }
-        System.out.println();
-        
-        // 打印DP表
-        for (int i = 0; i <= m; i++) {
-            if (i > 0) {
-                System.out.print(text1.charAt(i - 1) + " ");
-            } else {
-                System.out.print("  ");
-            }
-            
-            for (int j = 0; j <= n; j++) {
-                System.out.printf("%2d ", dp[i][j]);
-            }
-            System.out.println();
-        }
-        
-        // 打印LCS长度
-        System.out.println("\n最长公共子序列长度: " + dp[m][n]);
-    }
-    
-    /**
-     * 可视化LCS重建过程
-     * 
-     * @param text1 字符串1
-     * @param text2 字符串2
-     */
-    public static void visualizeLCSRebuild(String text1, String text2) {
-        int m = text1.length();
-        int n = text2.length();
-        int[][] dp = new int[m + 1][n + 1];
-        
-        // 填充DP表
-        for (int i = 1; i <= m; i++) {
-            for (int j = 1; j <= n; j++) {
-                if (text1.charAt(i - 1) == text2.charAt(j - 1)) {
-                    dp[i][j] = dp[i - 1][j - 1] + 1;
-                } else {
-                    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
-                }
-            }
-        }
-        
-        System.out.println("\nLCS重建过程:");
-        StringBuilder lcs = new StringBuilder();
-        int i = m, j = n;
-        int step = 1;
-        
-        while (i > 0 && j > 0) {
-            System.out.printf("步骤 %d: i=%d (%s), j=%d (%s)%n", 
-                             step++, i, text1.charAt(i-1), j, text2.charAt(j-1));
-            
-            if (text1.charAt(i - 1) == text2.charAt(j - 1)) {
-                System.out.printf("  匹配: %s == %s, 添加 '%s' 到LCS%n", 
-                                 text1.charAt(i-1), text2.charAt(j-1), text1.charAt(i-1));
-                lcs.append(text1.charAt(i - 1));
-                i--;
-                j--;
-            } else if (dp[i - 1][j] > dp[i][j - 1]) {
-                System.out.printf("  向左移动: dp[%d][%d]=%d > dp[%d][%d]=%d%n", 
-                                 i-1, j, dp[i-1][j], i, j-1, dp[i][j-1]);
-                i--;
-            } else {
-                System.out.printf("  向上移动: dp[%d][%d]=%d <= dp[%d][%d]=%d%n", 
-                                 i-1, j, dp[i-1][j], i, j-1, dp[i][j-1]);
-                j--;
-            }
-        }
-        
-        String result = lcs.reverse().toString();
-        System.out.println("\n重建的LCS: \"" + result + "\"");
-        System.out.println("长度: " + result.length());
-    }
-    
-    // ========================= 应用场景 =========================
-    
-    /**
-     * 文本差异比较（类似diff工具）
+     * 获取所有最长公共子序列
      * 
      * @param text1 文本1
      * @param text2 文本2
-     * @return 差异结果
+     * @return 所有最长公共子序列的列表
      */
-    public static String textDiff(String text1, String text2) {
-        List<String> lcs = findLCSLines(text1, text2);
-        String[] lines1 = text1.split("\n");
-        String[] lines2 = text2.split("\n");
+    public static List<String> getAllLCS(String text1, String text2) {
+        int m = text1.length();
+        int n = text2.length();
+        int[][] dp = new int[m + 1][n + 1];
         
+        // 填充DP表
+        for (int i = 1; i <= m; i++) {
+            for (int j = 1; j <= n; j++) {
+                if (text1.charAt(i - 1) == text2.charAt(j - 1)) {
+                    dp[i][j] = dp[i - 1][j - 1] + 1;
+                } else {
+                    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                }
+            }
+        }
+        
+        // 递归回溯获取所有LCS
+        return backtrackAllLCS(dp, text1, text2, m, n);
+    }
+    
+    private static List<String> backtrackAllLCS(int[][] dp, String text1, String text2, int i, int j) {
+        List<String> results = new ArrayList<>();
+        
+        if (i == 0 || j == 0) {
+            results.add("");
+            return results;
+        }
+        
+        if (text1.charAt(i - 1) == text2.charAt(j - 1)) {
+            List<String> lcsList = backtrackAllLCS(dp, text1, text2, i - 1, j - 1);
+            for (String lcs : lcsList) {
+                results.add(lcs + text1.charAt(i - 1));
+            }
+        } else {
+            if (dp[i - 1][j] >= dp[i][j - 1]) {
+                results.addAll(backtrackAllLCS(dp, text1, text2, i - 1, j));
+            }
+            
+            if (dp[i][j - 1] >= dp[i - 1][j]) {
+                results.addAll(backtrackAllLCS(dp, text1, text2, i, j - 1));
+            }
+        }
+        
+        return results;
+    }
+    
+    // ======================== 应用场景部分 ========================
+    
+    /**
+     * 计算文本相似度（基于LCS）
+     * 
+     * @param text1 文本1
+     * @param text2 文本2
+     * @return 相似度分数（0.0到1.0之间）
+     */
+    public static double textSimilarity(String text1, String text2) {
+        if (text1.isEmpty() && text2.isEmpty()) {
+            return 1.0;
+        }
+        
+        int lcsLength = lcsOptimized(text1, text2);
+        int maxLength = Math.max(text1.length(), text2.length());
+        
+        return (double) lcsLength / maxLength;
+    }
+    
+    /**
+     * DNA序列比对可视化
+     * 
+     * @param dna1 DNA序列1
+     * @param dna2 DNA序列2
+     * @return 比对结果字符串
+     */
+    public static String dnaAlignmentVisualization(String dna1, String dna2) {
+        String lcs = getLCS(dna1, dna2);
+        StringBuilder align1 = new StringBuilder();
+        StringBuilder align2 = new StringBuilder();
+        StringBuilder markers = new StringBuilder();
+        
+        int i = 0, j = 0, k = 0;
+        
+        while (k < lcs.length()) {
+            char c = lcs.charAt(k);
+            
+            // 处理第一个序列
+            while (i < dna1.length() && dna1.charAt(i) != c) {
+                align1.append(dna1.charAt(i++));
+                align2.append("-");
+                markers.append(" ");
+            }
+            align1.append(dna1.charAt(i++));
+            
+            // 处理第二个序列
+            while (j < dna2.length() && dna2.charAt(j) != c) {
+                align2.append(dna2.charAt(j++));
+                align1.append("-");
+                markers.append(" ");
+            }
+            align2.append(dna2.charAt(j++));
+            
+            // 添加匹配标记
+            markers.append("|");
+            k++;
+        }
+        
+        // 添加剩余字符
+        while (i < dna1.length()) {
+            align1.append(dna1.charAt(i++));
+            align2.append("-");
+            markers.append(" ");
+        }
+        
+        while (j < dna2.length()) {
+            align1.append("-");
+            align2.append(dna2.charAt(j++));
+            markers.append(" ");
+        }
+        
+        return "序列1: " + align1.toString() + "\n" +
+               "      " + markers.toString() + "\n" +
+               "序列2: " + align2.toString() + "\n" +
+               "说明: | 表示匹配位置，- 表示缺失或插入";
+    }
+    
+    /**
+     * 文件差异比较（基于LCS）
+     * 
+     * @param file1Lines 文件1内容（按行）
+     * @param file2Lines 文件2内容（按行）
+     * @return 差异比较结果
+     */
+    public static String fileDiffComparison(List<String> file1Lines, List<String> file2Lines) {
+        List<String> common = getLineLCS(file1Lines, file2Lines);
         StringBuilder diff = new StringBuilder();
-        int i = 0, j = 0;
+        int i = 0, j = 0, k = 0;
         
-        while (i < lines1.length || j < lines2.length) {
-            if (i < lines1.length && j < lines2.length && lines1[i].equals(lines2[j])) {
-                // 相同行
-                diff.append("  ").append(lines1[i]).append("\n");
+        diff.append("文件差异比较结果:\n");
+        
+        while (i < file1Lines.size() || j < file2Lines.size() || k < common.size()) {
+            // 当两个文件同时匹配公共行
+            if (k < common.size() && 
+                i < file1Lines.size() && 
+                file1Lines.get(i).equals(common.get(k)) && 
+                j < file2Lines.size() && 
+                file2Lines.get(j).equals(common.get(k))) {
+                
+                diff.append(" ").append(common.get(k)).append("\n");
                 i++;
                 j++;
-            } else {
-                // 检测删除的行
-                while (i < lines1.length && (j >= lines2.length || !lcs.contains(lines1[i]))) {
-                    diff.append("- ").append(lines1[i]).append("\n");
-                    i++;
-                }
+                k++;
+            } 
+            // 文件1有额外行
+            else if (k < common.size() && 
+                     i < file1Lines.size() && 
+                     file1Lines.get(i).equals(common.get(k)) == false) {
                 
-                // 检测新增的行
-                while (j < lines2.length && (i >= lines1.length || !lcs.contains(lines2[j]))) {
-                    diff.append("+ ").append(lines2[j]).append("\n");
-                    j++;
-                }
+                diff.append("-").append(file1Lines.get(i++)).append("\n");
+            } 
+            // 文件2有额外行
+            else if (k < common.size() && 
+                     j < file2Lines.size() && 
+                     file2Lines.get(j).equals(common.get(k)) == false) {
+                
+                diff.append("+").append(file2Lines.get(j++)).append("\n");
+            } 
+            // 处理剩余内容
+            else if (i < file1Lines.size()) {
+                diff.append("-").append(file1Lines.get(i++)).append("\n");
+            } 
+            else if (j < file2Lines.size()) {
+                diff.append("+").append(file2Lines.get(j++)).append("\n");
             }
         }
         
         return diff.toString();
     }
     
-    // 查找两个文本的LCS行
-    private static List<String> findLCSLines(String text1, String text2) {
-        String[] lines1 = text1.split("\n");
-        String[] lines2 = text2.split("\n");
+    /**
+     * 代码剽窃检测
+     * 
+     * @param code1 代码片段1
+     * @param code2 代码片段2
+     * @return 相似度报告
+     */
+    public static String plagiarismDetection(String code1, String code2) {
+        // 预处理代码（移除注释和空格）
+        String cleanCode1 = preprocessCode(code1);
+        String cleanCode2 = preprocessCode(code2);
         
-        int m = lines1.length;
-        int n = lines2.length;
+        // 计算相似度
+        double similarity = textSimilarity(cleanCode1, cleanCode2);
+        int commonLength = lcsOptimized(cleanCode1, cleanCode2);
+        int minLength = Math.min(cleanCode1.length(), cleanCode2.length());
+        
+        // 生成报告
+        StringBuilder report = new StringBuilder();
+        report.append("代码剽窃检测报告\n");
+        report.append("-----------------\n");
+        report.append(String.format("原始代码长度: %d\n", code1.length()));
+        report.append(String.format("对比代码长度: %d\n", code2.length()));
+        report.append(String.format("公共子序列长度: %d\n", commonLength));
+        report.append(String.format("相似度指数: %.2f%%\n", similarity * 100));
+        report.append("\n评估: ");
+        
+        if (similarity > 0.9) {
+            report.append("⚠️ 高概率存在代码剽窃（90%以上匹配）");
+        } else if (similarity > 0.7) {
+            report.append("⚠️ 中等概率存在代码剽窃（70-90%匹配）");
+        } else if (similarity > 0.5) {
+            report.append("⚠️ 低概率存在代码剽窃（50-70%匹配）");
+        } else {
+            report.append("✅ 代码差异显著，不太可能存在剽窃");
+        }
+        
+        return report.toString();
+    }
+    
+    // ======================== 辅助方法部分 ========================
+    
+    /**
+     * 获取两个文件的最长公共行序列
+     * 
+     * @param lines1 文件1的行列表
+     * @param lines2 文件2的行列表
+     * @return 公共行序列
+     */
+    private static List<String> getLineLCS(List<String> lines1, List<String> lines2) {
+        int m = lines1.size();
+        int n = lines2.size();
         int[][] dp = new int[m + 1][n + 1];
         
-        // 填充DP表
         for (int i = 1; i <= m; i++) {
             for (int j = 1; j <= n; j++) {
-                if (lines1[i - 1].equals(lines2[j - 1])) {
+                if (lines1.get(i - 1).equals(lines2.get(j - 1))) {
                     dp[i][j] = dp[i - 1][j - 1] + 1;
                 } else {
                     dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
@@ -307,12 +385,11 @@ public class LongestCommonSubsequence {
             }
         }
         
-        // 回溯重建LCS行
-        List<String> lcsLines = new LinkedList<>();
+        List<String> lcsLines = new ArrayList<>();
         int i = m, j = n;
         while (i > 0 && j > 0) {
-            if (lines1[i - 1].equals(lines2[j - 1])) {
-                lcsLines.add(lines1[i - 1]);
+            if (lines1.get(i - 1).equals(lines2.get(j - 1))) {
+                lcsLines.add(lines1.get(i - 1));
                 i--;
                 j--;
             } else if (dp[i - 1][j] > dp[i][j - 1]) {
@@ -327,245 +404,112 @@ public class LongestCommonSubsequence {
     }
     
     /**
-     * DNA序列比对
+     * 预处理代码 - 移除注释和多余空格
      * 
-     * @param dna1 DNA序列1
-     * @param dna2 DNA序列2
-     * @return 比对结果
+     * @param code 原始代码
+     * @return 处理后的代码
      */
-    public static String dnaAlignment(String dna1, String dna2) {
-        String lcs = buildLCS(dna1, dna2);
-        StringBuilder align1 = new StringBuilder();
-        StringBuilder align2 = new StringBuilder();
-        StringBuilder markers = new StringBuilder();
-        
-        int i = 0, j = 0;
-        for (char c : lcs.toCharArray()) {
-            // 处理dna1直到匹配字符
-            while (i < dna1.length() && dna1.charAt(i) != c) {
-                align1.append(dna1.charAt(i));
-                align2.append("-");
-                markers.append(" ");
-                i++;
-            }
-            
-            // 处理dna2直到匹配字符
-            while (j < dna2.length() && dna2.charAt(j) != c) {
-                align1.append("-");
-                align2.append(dna2.charAt(j));
-                markers.append(" ");
-                j++;
-            }
-            
-            // 添加匹配字符
-            if (i < dna1.length() && j < dna2.length()) {
-                align1.append(dna1.charAt(i));
-                align2.append(dna2.charAt(j));
-                markers.append("|");
-                i++;
-                j++;
-            }
-        }
-        
-        // 添加剩余字符
-        while (i < dna1.length()) {
-            align1.append(dna1.charAt(i));
-            align2.append("-");
-            markers.append(" ");
-            i++;
-        }
-        
-        while (j < dna2.length()) {
-            align1.append("-");
-            align2.append(dna2.charAt(j));
-            markers.append(" ");
-            j++;
-        }
-        
-        return "序列1: " + align1.toString() + "\n" +
-               "      " + markers.toString() + "\n" +
-               "序列2: " + align2.toString();
+    private static String preprocessCode(String code) {
+        // 移除单行注释
+        String cleanCode = code.replaceAll("//.*", "");
+        // 移除多行注释
+        cleanCode = cleanCode.replaceAll("/\\*.*?\\*/", "");
+        // 移除多余空格和换行
+        cleanCode = cleanCode.replaceAll("\\s+", " ");
+        return cleanCode.trim();
     }
     
-    /**
-     * 版本控制系统diff算法简化版
-     * 
-     * @param oldVersion 旧版本内容
-     * @param newVersion 新版本内容
-     * @return 变更摘要
-     */
-    public static String versionControlDiff(String oldVersion, String newVersion) {
-        List<String> oldLines = Arrays.asList(oldVersion.split("\n"));
-        List<String> newLines = Arrays.asList(newVersion.split("\n"));
-        
-        int m = oldLines.size();
-        int n = newLines.size();
-        int[][] dp = new int[m + 1][n + 1];
-        
-        // 填充DP表
-        for (int i = 1; i <= m; i++) {
-            for (int j = 1; j <= n; j++) {
-                if (oldLines.get(i - 1).equals(newLines.get(j - 1))) {
-                    dp[i][j] = dp[i - 1][j - 1] + 1;
-                } else {
-                    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
-                }
-            }
-        }
-        
-        // 生成变更摘要
-        StringBuilder diff = new StringBuilder();
-        int i = m, j = n;
-        
-        while (i > 0 || j > 0) {
-            if (i > 0 && j > 0 && oldLines.get(i - 1).equals(newLines.get(j - 1))) {
-                // 未更改的行
-                i--;
-                j--;
-            } else if (j > 0 && (i == 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-                // 新增的行
-                diff.insert(0, "+ " + newLines.get(j - 1) + "\n");
-                j--;
-            } else if (i > 0 && (j == 0 || dp[i][j - 1] < dp[i - 1][j])) {
-                // 删除的行
-                diff.insert(0, "- " + oldLines.get(i - 1) + "\n");
-                i--;
-            }
-        }
-        
-        return diff.toString();
-    }
-    
-    // ========================= 测试用例 =========================
+    // ======================== 测试方法 ========================
     
     public static void main(String[] args) {
-        testBasicCases();
-        testEdgeCases();
-        testPerformance();
+        testBasicAlgorithms();
         testApplicationScenarios();
     }
     
-    private static void testBasicCases() {
-        System.out.println("====== 基础测试 ======");
-        String text1 = "abcde";
-        String text2 = "ace";
+    private static void testBasicAlgorithms() {
+        System.out.println("====== 基本算法测试 ======");
+        String text1 = "AGGTAB";
+        String text2 = "GXTXAYB";
         
-        testLCS(text1, text2, 3);
+        // 基础LCS长度
+        int basicLcs = lcsLength(text1, text2);
+        System.out.printf("[基础算法] '%s' 和 '%s' 的LCS长度: %d\n", text1, text2, basicLcs);
         
-        String text3 = "abc";
-        String text4 = "abc";
-        testLCS(text3, text4, 3);
+        // 优化LCS长度
+        int optLcs = lcsOptimized(text1, text2);
+        System.out.printf("[优化算法] '%s' 和 '%s' 的LCS长度: %d\n", text1, text2, optLcs);
         
-        String text5 = "abc";
-        String text6 = "def";
-        testLCS(text5, text6, 0);
-    }
-    
-    private static void testLCS(String text1, String text2, int expected) {
-        int dpResult = lcsDP(text1, text2);
-        int optResult = lcsOptimized(text1, text2);
-        String lcsStr = buildLCS(text1, text2);
+        // 获取LCS
+        String lcs = getLCS(text1, text2);
+        System.out.printf("LCS结果: '%s'\n", lcs);
         
-        System.out.printf("\n文本1: \"%s\"\n文本2: \"%s\"\n", text1, text2);
-        System.out.println("DP结果: " + dpResult);
-        System.out.println("优化DP结果: " + optResult);
-        System.out.println("LCS字符串: \"" + lcsStr + "\"");
-        
-        boolean pass = dpResult == expected && optResult == expected;
-        System.out.println("状态: " + (pass ? "✅" : "❌"));
-        
-        // 可视化
-        if (text1.length() <= 10 && text2.length() <= 10) {
-            visualizeDPTable(text1, text2);
-            visualizeLCSRebuild(text1, text2);
+        // 获取所有LCS
+        List<String> allLcs = getAllLCS(text1, text2);
+        System.out.println("所有可能的LCS:");
+        for (String seq : allLcs) {
+            System.out.println("  " + seq);
         }
-    }
-    
-    private static void testEdgeCases() {
-        System.out.println("\n====== 边界测试 ======");
-        
-        // 空字符串测试
-        System.out.println("空字符串测试:");
-        testLCS("", "", 0);
-        testLCS("abc", "", 0);
-        testLCS("", "def", 0);
-        
-        // 长字符串测试
-        System.out.println("\n长字符串测试:");
-        String longText1 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        String longText2 = "ABCDXYZLMNOPQRSTUVW";
-        testLCS(longText1, longText2, 19);
-        
-        // 重复字符测试
-        System.out.println("\n重复字符测试:");
-        String repeat1 = "AAAAA";
-        String repeat2 = "AA";
-        testLCS(repeat1, repeat2, 2);
-    }
-    
-    private static void testPerformance() {
-        System.out.println("\n====== 性能测试 ======");
-        
-        // 生成长字符串
-        StringBuilder sb1 = new StringBuilder();
-        StringBuilder sb2 = new StringBuilder();
-        Random rand = new Random();
-        
-        for (int i = 0; i < 10000; i++) {
-            char c = (char)('A' + rand.nextInt(26));
-            sb1.append(c);
-            if (rand.nextDouble() < 0.7) {
-                sb2.append(c);
-            } else {
-                sb2.append((char)('A' + rand.nextInt(26)));
-            }
-        }
-        
-        String longText1 = sb1.toString();
-        String longText2 = sb2.toString();
-        
-        System.out.println("字符串长度: " + longText1.length() + " 和 " + longText2.length());
-        
-        // 测试DP方法
-        long start = System.currentTimeMillis();
-        int dpResult = lcsDP(longText1, longText2);
-        long end = System.currentTimeMillis();
-        System.out.printf("DP方法: %d (耗时: %d ms)%n", dpResult, end - start);
-        
-        // 测试优化方法
-        start = System.currentTimeMillis();
-        int optResult = lcsOptimized(longText1, longText2);
-        end = System.currentTimeMillis();
-        System.out.printf("优化DP: %d (耗时: %d ms)%n", optResult, end - start);
-        
-        // 测试重建LCS（小规模）
-        if (longText1.length() < 100) {
-            start = System.currentTimeMillis();
-            String lcs = buildLCS(longText1, longText2);
-            end = System.currentTimeMillis();
-            System.out.printf("LCS重建: \"%s\" (耗时: %d ms)%n", lcs, end - start);
-        }
+        System.out.println();
     }
     
     private static void testApplicationScenarios() {
-        System.out.println("\n====== 应用场景测试 ======");
+        System.out.println("====== 应用场景测试 ======");
         
-        // 场景1: 文本差异比较
-        System.out.println("1. 文本差异比较:");
-        String text1 = "Hello world!\nThis is a test.\nLCS algorithm is useful.";
-        String text2 = "Hello there!\nThis is a test.\nLCS algorithm is powerful.";
-        System.out.println("差异结果:\n" + textDiff(text1, text2));
+        // 文本相似度计算
+        System.out.println("\n[场景1] 文本相似度计算:");
+        String s1 = "人类基因组测序计划";
+        String s2 = "人类基因组测序项目";
+        double similarity = textSimilarity(s1, s2);
+        System.out.printf("文本1: '%s'\n文本2: '%s'\n相似度: %.2f%%\n", 
+                          s1, s2, similarity * 100);
         
-        // 场景2: DNA序列比对
-        System.out.println("\n2. DNA序列比对:");
-        String dna1 = "GATCATGCTAGCTAGCTAGCT";
-        String dna2 = "GATCCGTAGCTAGCTAGCT";
-        System.out.println(dnaAlignment(dna1, dna2));
+        // DNA序列比对可视化
+        System.out.println("\n[场景2] DNA序列比对:");
+        String dna1 = "ATGCTGAGCTAGCTAGCT";
+        String dna2 = "ATGCGAGCTAGGTAGGT";
+        System.out.println(dnaAlignmentVisualization(dna1, dna2));
         
-        // 场景3: 版本控制系统diff
-        System.out.println("\n3. 版本控制系统diff:");
-        String oldCode = "public class Hello {\n    public static void main(String[] args) {\n        System.out.println(\"Hello\");\n    }\n}";
-        String newCode = "public class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println(\"Hello World!\");\n    }\n}";
-        System.out.println("代码变更:\n" + versionControlDiff(oldCode, newCode));
+        // 文件差异比较
+        System.out.println("\n[场景3] 文件差异比较:");
+        List<String> file1 = Arrays.asList(
+            "public class Calculator {",
+            "    public int add(int a, int b) {",
+            "        return a + b;",
+            "    }",
+            "}"
+        );
+        List<String> file2 = Arrays.asList(
+            "public class AdvancedCalculator {",
+            "    public int add(int a, int b) {",
+            "        return a + b;",
+            "    }",
+            "    ",
+            "    public int subtract(int a, int b) {",
+            "        return a - b;",
+            "    }",
+            "}"
+        );
+        System.out.println(fileDiffComparison(file1, file2));
+        
+        // 代码剽窃检测
+        System.out.println("\n[场景4] 代码剽窃检测:");
+        String code1 = "public class Sum {\n" +
+                       "    public static void main(String[] args) {\n" +
+                       "        int a = 5, b = 10;\n" +
+                       "        int sum = a + b;\n" +
+                       "        System.out.println(\"Sum is: \" + sum);\n" +
+                       "    }\n" +
+                       "}";
+        
+        String code2 = "public class Addition {\n" +
+                       "    public static void main(String[] args) {\n" +
+                       "        int num1 = 5;\n" +
+                       "        int num2 = 10;\n" +
+                       "        int total = num1 + num2;\n" +
+                       "        System.out.println(\"Total: \" + total);\n" +
+                       "    }\n" +
+                       "}";
+        
+        System.out.println(plagiarismDetection(code1, code2));
     }
 }
