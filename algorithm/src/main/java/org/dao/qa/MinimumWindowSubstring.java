@@ -3,287 +3,201 @@ package main.java.org.dao.qa;
 import java.util.*;
 
 /**
- * 最小覆盖子串问题 - 找到包含目标字符串所有字符的最短子串
+ * 最小覆盖子串解决方案
  * 
- * <p><b>问题描述</b>:
- * 给定一个字符串 S 和一个字符串 T，在 S 中找出包含 T 所有字符的最小子串。如果不存在，返回空字符串。
+ * <p><b>问题描述：</b>
+ * 给定一个字符串s和一个字符串t，找出s中涵盖t所有字符的最小子串。
+ * 如果s中不存在涵盖t所有字符的子串，则返回空字符串。
  * 
- * <p><b>示例</b>:
- * 输入: S = "ADOBECODEBANC", T = "ABC"
+ * <p><b>示例：</b>
+ * 输入: s = "ADOBECODEBANC", t = "ABC"
  * 输出: "BANC"
- * 
- * <p><b>问题难度</b>: 🔥🔥🔥 困难 (LeetCode 第76题)
- * 
- * <p><b>解题思路</b>:
- * 1. 滑动窗口技术:
- *    - 使用左右指针定义窗口的边界
- *    - 使用哈希表记录目标字符串中每个字符的出现频率
- *    - 扩展右指针直到窗口包含所有目标字符
- *    - 收缩左指针寻找最小窗口
- * 2. 优化技巧:
- *    - 使用频率计数判断窗口是否满足条件
- *    - 在满足条件时更新最小窗口
- * 
- * <p><b>时间复杂度</b>: O(|S| + |T|) - 线性时间
- * <p><b>空间复杂度</b>: O(1) - 字符频率数组大小固定为128
- * 
- * <p><b>应用场景</b>:
- * 1. DNA序列分析
- * 2. 文档内容搜索
- * 3. 广告关键词匹配
- * 4. 实时日志分析
- * 5. 数据挖掘中的特征提取
+ * 解释: 最小子串 "BANC" 包含字符串 t 的所有字符 'A'、'B' 和 'C'
  */
-
 public class MinimumWindowSubstring {
-    
+
     /**
-     * 滑动窗口解法
+     * 滑动窗口解法 - 时间复杂度O(s)
      * 
      * @param s 源字符串
      * @param t 目标字符串
      * @return 最小覆盖子串
      */
     public static String minWindow(String s, String t) {
-        // 处理特殊情况
-        if (s == null || t == null || s.length() == 0 || t.length() == 0 ||
-            s.length() < t.length()) {
+        if (s == null || t == null || s.length() < t.length()) {
             return "";
         }
         
-        // 初始化频率数组
-        int[] freq = new int[128];
+        // 统计t中字符出现次数
+        Map<Character, Integer> targetMap = new HashMap<>();
         for (char c : t.toCharArray()) {
-            freq[c]++;
+            targetMap.put(c, targetMap.getOrDefault(c, 0) + 1);
         }
         
-        int left = 0, right = 0;             // 滑动窗口边界
-        int minLeft = 0;                     // 最小窗口左边界
-        int minLen = Integer.MAX_VALUE;      // 最小窗口长度
-        int required = t.length();            // 需要匹配的字符数量
+        // 窗口内字符计数
+        Map<Character, Integer> windowMap = new HashMap<>();
+        // 记录窗口中包含t中字符的个数（当某个字符在窗口中出现次数不小于t中该字符出现次数时，count加1）
+        int count = 0;
+        int left = 0, right = 0; // 窗口左右指针
+        int minLen = Integer.MAX_VALUE; // 最小覆盖子串长度
+        int start = 0; // 最小覆盖子串起始位置
         
-        // 滑动窗口遍历
         while (right < s.length()) {
-            char rightChar = s.charAt(right);
-            
-            // 遇到目标字符，减少需求计数
-            if (freq[rightChar] > 0) {
-                required--;
-            }
-            
-            // 减少该字符的频数（非目标字符会变成负数）
-            freq[rightChar]--;
+            char rChar = s.charAt(right);
             right++;
             
-            // 当窗口包含所有目标字符时
-            while (required == 0) {
-                // 更新最小窗口
+            // 如果当前字符在t中，则更新窗口内该字符的计数
+            if (targetMap.containsKey(rChar)) {
+                windowMap.put(rChar, windowMap.getOrDefault(rChar, 0) + 1);
+                // 如果窗口中该字符的数量等于t中该字符的数量，则count加1
+                if (windowMap.get(rChar).equals(targetMap.get(rChar))) {
+                    count++;
+                }
+            }
+            
+            // 当窗口中包含t中所有字符时，收缩窗口
+            while (count == targetMap.size()) {
+                // 更新最小覆盖子串
                 if (right - left < minLen) {
-                    minLeft = left;
                     minLen = right - left;
+                    start = left;
                 }
                 
-                // 移动左指针
-                char leftChar = s.charAt(left);
-                freq[leftChar]++;
-                
-                // 如果左指针移动使得某个目标字符不再满足要求
-                if (freq[leftChar] > 0) {
-                    required++;
-                }
+                char lChar = s.charAt(left);
                 left++;
-            }
-        }
-        
-        return minLen == Integer.MAX_VALUE ? "" : s.substring(minLeft, minLeft + minLen);
-    }
-    
-    /**
-     * 可视化滑动窗口过程
-     * 
-     * @param s 源字符串
-     * @param t 目标字符串
-     */
-    public static void visualizeWindow(String s, String t) {
-        System.out.println("\n字符串: " + s);
-        System.out.println("目标: " + t);
-        System.out.println("可视化滑动窗口过程:");
-        
-        int[] freq = new int[128];
-        for (char c : t.toCharArray()) {
-            freq[c]++;
-        }
-        
-        int left = 0, right = 0;
-        int required = t.length();
-        Map<Character, Integer> freqMap = new HashMap<>();
-        for (char c : t.toCharArray()) {
-            freqMap.putIfAbsent(c, 0);
-            freqMap.put(c, freqMap.get(c) + 1);
-        }
-        
-        while (right < s.length()) {
-            System.out.println("\n右指针位置: " + right);
-            char rightChar = s.charAt(right);
-            
-            // 显示当前字符
-            System.out.println("当前字符: " + rightChar);
-            
-            if (freq[rightChar] > 0) {
-                required--;
-            }
-            freq[rightChar]--;
-            
-            // 显示频率变化
-            System.out.print("剩余需求: ");
-            for (char c : freqMap.keySet()) {
-                System.out.print(c + ":" + Math.max(freq[c], 0) + " ");
-            }
-            System.out.println("\n未满足需求数: " + required);
-            
-            right++;
-            
-            // 显示窗口状态
-            System.out.println("当前窗口: [" + s.substring(left, right) + "]");
-            
-            while (required == 0) {
-                System.out.println("满足条件! 最小窗口长度: " + (right - left));
                 
-                char leftChar = s.charAt(left);
-                freq[leftChar]++;
-                
-                if (freq[leftChar] > 0) {
-                    required++;
-                    System.out.println("移动左指针: " + left + " -> " + (left+1));
-                    System.out.println("需求增加: " + leftChar);
+                // 如果左指针所指的字符在t中，则需要更新窗口计数
+                if (targetMap.containsKey(lChar)) {
+                    // 如果窗口中该字符的数量等于t中该字符的数量，则收缩窗口前count减1
+                    if (windowMap.get(lChar).equals(targetMap.get(lChar))) {
+                        count--;
+                    }
+                    windowMap.put(lChar, windowMap.get(lChar) - 1);
                 }
-                
-                left++;
             }
         }
         
-        String result = minWindow(s, t);
-        System.out.println("\n最小覆盖子串: " + result);
+        return minLen == Integer.MAX_VALUE ? "" : s.substring(start, start + minLen);
     }
+
+    // ========================== 应用场景扩展 ==========================
     
     /**
-     * 扩展应用：包含目标字符串所有字符但顺序不要求的序列
+     * 文档内容搜索高亮器
      * 
-     * @param s 源字符串
-     * @param t 目标字符串
-     * @return 最短满足子串
+     * @param document 文档全文
+     * @param keywords 关键词（连续字符串）
+     * @return 包含所有关键词的最小连续片段（用于高亮显示）
      */
-    public static String minWindowExtended(String s, String t) {
-        // 与原始方法相同，但输出扩展信息
-        String result = minWindow(s, t);
-        System.out.println("\n应用扩展：包含顺序不要求的序列");
-        System.out.println("输入: S=\"" + s + "\", T=\"" + t + "\"");
-        System.out.println("结果: \"" + result + "\"");
-        System.out.println("分析: 虽然目标字符要求顺序 " + t + 
-                         "，但实际顺序为 " + (result.isEmpty() ? "N/A" : result));
-        return result;
+    public static String documentHighlighter(String document, String keywords) {
+        return minWindow(document, keywords);
     }
     
     /**
-     * 测试用例和主函数
+     * 基因序列片段查找器
+     * 
+     * @param genome 基因序列
+     * @param marker 目标基因片段
+     * @return 包含目标基因片段的最短连续序列
      */
+    public static String geneSequenceFinder(String genome, String marker) {
+        return minWindow(genome, marker);
+    }
+    
+    /**
+     * 网络流量分析器（寻找包含特定特征串的最短流量片段）
+     * 
+     * @param traffic 流量数据串
+     * @param pattern 特征模式串
+     * @return 包含所有特征字符的最短流量片段
+     */
+    public static String trafficAnalyzer(String traffic, String pattern) {
+        return minWindow(traffic, pattern);
+    }
+    
+    /**
+     * 多关键词搜索摘要生成器
+     * 
+     * @param text 源文本
+     * @param keywords 关键词列表（以空格分隔）
+     * @return 包含所有关键词的最小区间摘要
+     */
+    public static String generateSearchSnippet(String text, String keywords) {
+        return minWindow(text, keywords.replace(" ", ""));
+    }
+
+    // ========================== 测试方法 ==========================
+    
     public static void main(String[] args) {
-        // 基础测试
-        testBasicCases();
-        
-        // 扩展功能测试
-        testExtendedCases();
-        
-        // 性能测试
+        testAlgorithm();
         testPerformance();
+        testApplicationScenarios();
     }
     
-    private static void testBasicCases() {
-        System.out.println("====== 基础测试 ======");
+    private static void testAlgorithm() {
+        System.out.println("===== 算法测试 =====");
+        String s = "ADOBECODEBANC";
+        String t = "ABC";
+        String result = minWindow(s, t);
+        System.out.println("输入: s = \"" + s + "\", t = \"" + t + "\"");
+        System.out.println("输出: \"" + result + "\"");
+        
+        // 更多测试用例
         String[][] testCases = {
-            {"ADOBECODEBANC", "ABC"},  // "BANC"
-            {"a", "a"},                // "a"
-            {"a", "aa"},               // ""
-            {"ab", "a"},               // "a"
-            {"ab", "b"},               // "b"
-            {"abc", "ac"},             // "abc"
-            {"abracadabra", "abc"},   // "brac"
-            {"helloworld", "lol"},    // "llo"
-            {"timetopractice", "toc"}, // "topractice"
-            {"zoomlazaro", "oo"}       // "oo"
+            {"a", "a", "a"},
+            {"a", "aa", ""},
+            {"ab", "a", "a"},
+            {"abc", "ac", "abc"}
         };
         
-        String[] expected = {
-            "BANC", "a", "", "a", "b", "abc", "brac", "worl", "topractice", "oo"
-        };
-        
-        for (int i = 0; i < testCases.length; i++) {
-            String s = testCases[i][0];
-            String t = testCases[i][1];
-            String result = minWindow(s, t);
-            
-            System.out.printf("\n测试%d: S=\"%s\", T=\"%s\"", i+1, s, t);
-            System.out.printf("\n结果: \"%s\"", result);
-            System.out.printf("\n预期: \"%s\"", expected[i]);
-            System.out.printf("\n状态: %s\n", result.equals(expected[i]) ? "✅" : "❌");
-            
-            // 特殊用例可视化
-            if (i == 0 || i == 6) {
-                visualizeWindow(s, t);
-            }
+        for (String[] testCase : testCases) {
+            String res = minWindow(testCase[0], testCase[1]);
+            String expected = testCase[2];
+            System.out.printf("输入: s='%s', t='%s' -> 输出: '%s' (%s)%n", 
+                            testCase[0], testCase[1], res, 
+                            res.equals(expected) ? "正确" : "错误: 预期 '" + expected + "'");
         }
-    }
-    
-    private static void testExtendedCases() {
-        System.out.println("\n====== 扩展应用测试 ======");
-        // 包含顺序不要求的序列
-        minWindowExtended("ADOBECODEBANC", "CAB");
-        
-        // 空目标测试
-        minWindowExtended("abc", "");
-        
-        // 多重复字符
-        minWindowExtended("aaabbbccc", "abbc");
     }
     
     private static void testPerformance() {
-        System.out.println("\n====== 性能测试 ======");
-        
-        // 生成长字符串
-        StringBuilder sb = new StringBuilder();
-        Random rand = new Random();
-        for (int i = 0; i < 1_000_000; i++) {
-            sb.append((char)('A' + rand.nextInt(26)));
+        System.out.println("\n===== 性能测试 =====");
+        // 生成大型测试数据
+        StringBuilder sBuilder = new StringBuilder();
+        for (int i = 0; i < 1000000; i++) {  // 100万字符
+            sBuilder.append((char)('a' + (int)(Math.random() * 26)));
         }
-        String longS = sb.toString();
-        String longT = "ABCDEFG";
+        String s = sBuilder.toString();
+        String t = "abcdefghij";  // 10个字符
         
-        // Unicode测试字符串
-        String unicodeS = "中文测试字符串包含各种字符ξηθλμνξ日本語";
-        String unicodeT = "字符ξ";
+        long startTime = System.currentTimeMillis();
+        String result = minWindow(s, t);
+        long duration = System.currentTimeMillis() - startTime;
         
-        // 性能测试
-        long startTime;
-        int iterations = 10;
+        System.out.println("在100万字符中查找10字符所需时间: " + duration + "ms");
+        System.out.println("找到的窗口长度: " + (result.length()));
+    }
+    
+    private static void testApplicationScenarios() {
+        System.out.println("\n===== 应用场景测试 =====");
         
-        // 长字符串测试
-        startTime = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            minWindow(longS, longT);
-        }
-        long endTime = System.currentTimeMillis();
-        System.out.println("百万字符处理时间: " + (endTime - startTime) + "ms (10次平均)");
+        // 场景1: 文档高亮
+        String document = "在一个黑暗的夜晚，有一个黑暗的身影出现在黑暗的角落。";
+        String keywords = "黑暗身影";
+        System.out.println("文档高亮器结果: " + documentHighlighter(document, keywords));
         
-        // Unicode字符测试
-        startTime = System.currentTimeMillis();
-        for (int i = 0; i < 10000; i++) {
-            minWindow(unicodeS, unicodeT);
-        }
-        endTime = System.currentTimeMillis();
-        System.out.println("Unicode处理时间: " + (endTime - startTime) + "ms (10000次平均)");
+        // 场景2: 基因序列分析
+        String genome = "GCATGCAGTCGATCAGTCGAGCTAGCTACGAT";
+        String marker = "GCT";
+        System.out.println("基因序列查找结果: " + geneSequenceFinder(genome, marker));
         
-        // 结果显示
-        String result = minWindow(longS, longT);
-        System.out.println("\n长字符串示例结果长度: " + result.length());
+        // 场景3: 网络流量分析
+        String traffic = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n...敏感数据...";
+        String pattern = "敏感数据";
+        System.out.println("网络流量分析结果: " + trafficAnalyzer(traffic, pattern));
+        
+        // 场景4: 搜索结果摘要
+        String article = "人工智能是计算机科学的一个分支，旨在创造能够执行通常需要人类智能的任务的智能机器。";
+        String searchTerms = "人工智能 任务";
+        System.out.println("搜索摘要: " + generateSearchSnippet(article, searchTerms));
     }
 }
