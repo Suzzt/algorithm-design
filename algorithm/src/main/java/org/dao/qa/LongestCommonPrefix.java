@@ -240,7 +240,6 @@ public class LongestCommonPrefix {
         // 确保结果以完整的目录名结束
         int lastSlash = commonPrefix.lastIndexOf('/');
         if (lastSlash == -1) return "";
-        
         return commonPrefix.substring(0, lastSlash + 1);
     }
     
